@@ -1,0 +1,61 @@
+<h1 id="compsci-194-26-project-1">COMPSCI 194-26: Project 1</h1>
+<h3 id="kaijie-xu">Kaijie Xu</h3>
+<h3 id="nortrom-berkeley-edu">nortrom@berkeley.edu</h3>
+<h2 id="background">Background</h2>
+<p>Sergei Mikhailovich Prokudin-Gorskii (1863-1944) was a man well ahead of his time. Convinced, as early as 1907, that color photography was the wave of the future, he won Tzar&#39;s special permission to travel across the vast Russian Empire and take color photographs of everything he saw including the only color portrait of Leo Tolstoy. And he really photographed everything: people, buildings, landscapes, railroads, bridges... thousands of color pictures!</p>
+<p>His idea was simple: record three exposures of every scene onto a glass plate using a red, a green, and a blue filter. Never mind that there was no way to print color photographs until much later -- he envisioned special projectors to be installed in &quot;multimedia&quot; classrooms all across Russia where the children would be able to learn about their vast country. Alas, his plans never materialized: he left Russia in 1918, right after the revolution, never to return again. Luckily, his RGB glass plate negatives, capturing the last years of the Russian Empire, survived and were purchased in 1948 by the Library of Congress. The LoC has recently digitized the negatives and made them available on-line.</p>
+<p>The purpose of this project is to use image processing techniques to reproduce color images from the given Prokudin-Gorskii Photo Collection. </p>
+<h2 id="approach">Approach</h2>
+<p>We need to first split up this image into three channels and then align them so we can get a desirable colored image. </p>
+<p>To measure how well the images match, we have two metrics: L2 Norm(also known as Sum of Squared Differences, named SSD) and normalized cross-correlation (NCC). NCC provides better result so I use NCC as my metric.</p>
+<h3 id="image-pyramid-method">Image Pyramid Method</h3>
+<p>Naive Exhaustive search becomes expensive for large images, so I implemented Image Pyramid which aligns high resolution images efficiently.</p>
+<p>The algorithm recursively scale down the image until the image is small enough. We perform an exhaustive search on the smallest image(which requires less computational effort to calculate the overall offsets), then propagating the best alignment offsets to higher resolution layers.</p>
+<p>Besides, I have also tried different base channel and align sequence for alignments, while the changes in result are so slight that I just take this factor out of consideration.  </p>
+
+<h3 id="auto-crop">Auto Crop</h3>
+<p>Automatic Cropping identify the borders and cut them off. We use the <strong>Sober</strong> filter on the image so that we can compute the horizontal and vertical gradients for each pixel. Then the rows 
+ and columns with the maximum or minimum summed gradient are the borders. Once we find the borders for each channel, we select the one that crops the most and apply it to other channels. </p>
+<h3 id="example1">Auto Crop Example</h3>
+<p><img src="lady_pyramid_NCC_uncrop.jpg" width="30%"></p>
+<p><img src="lady_pyramid_NCC.jpg" width="30%"></p>
+<p><img src="three_generations_pyramid_NCC_uncrop.jpg" width="30%"></p>
+<p><img src="three_generations_pyramid_NCC.jpg" width="30%"></p>
+<h3 id="auto-white-balance-">Auto White Balance.</h3>
+<p>I use the gray world algorithm. The gray-world algorithm assumes that the pixels are neutral gray on average because there is a good distribution of colors in the image. Therefore, we can estimate the pixel color by looking at the average color and comparing it to gray.</p>
+<h3 id="example2">Auto WB Example</h3>
+<p><img src="cathedral_pyramid_NCC.jpg"></p>
+<p><img src="cathedral_pyramid_NCC_WB2.jpg"></p>
+<p><img src="emir_pyramid_NCC.jpg" width="30%" ></p>
+<p><img src="emir_pyramid_NCC_WB.jpg" width="30%" ></p>
+<h2 id="final-result">Final Result</h2>
+<p>red displacement:[ 2 10 ] green displacement:[ 2 4 ]</p>
+<p><img src="cathedral_pyramid_NCC_WB2.jpg"></p>
+<p>red displacement:[ -4 56 ] green displacement:[ 0 24 ]</p>
+<p><img src="church_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 40 104 ] green displacement:[ 24 48 ]</p>
+<p><img src="emir_pyramid_NCC_WB.jpg" width="30%" ></p>
+<p>red displacement:[ 12 124 ] green displacement:[ 16 60 ]</p>
+<p><img src="harvesters_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 20 88 ] green displacement:[ 16 40 ]</p>
+<p><img src="icon_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 12 108 ] green displacement:[ 8 48 ]</p>
+<p><img src="lady_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 12 180 ] green displacement:[ 8 84 ]</p>
+<p><img src="melons_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 2 4 ] green displacement:[ 2 -2 ]</p>
+<p><img src="monastery_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 36 108 ] green displacement:[ 24 52 ]</p>
+<p><img src="onion_church_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 36 176 ] green displacement:[ 28 80 ]</p>
+<p><img src="self_portrait_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 12 112 ] green displacement:[ 12 52 ]</p>
+<p><img src="three_generations_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 2 6 ] green displacement:[ 2 2 ]</p>
+<p><img src="tobolsk_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ 32 88 ] green displacement:[ 4 44 ]</p>
+<p><img src="train_pyramid_NCC_WB.jpg" width="30%"></p>
+<p>red displacement:[ -12 104 ] green displacement:[ 0 52 ]</p>
+<p><img src="workshop_pyramid_NCC_WB.jpg" width="30%"></p>
+
+

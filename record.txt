@@ -1,0 +1,5 @@
+cathedral
+white_balance(final, 20, 300, 10, 10)
+
+church
+white_balance(final, 1400, 1500, 10, 10)
