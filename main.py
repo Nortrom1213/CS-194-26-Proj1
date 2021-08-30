@@ -1,13 +1,8 @@
-import skimage as sk
 import numpy as np
 import skimage.io as skio
 import skimage.filters as skfil
 import skimage.transform as sktr
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-import time
 import math
-
 
 # Sum of Squared Differences
 def L2(A, B):
@@ -29,28 +24,34 @@ def move_by_x(A, n):
 def move_by_y(A, n):
     return np.roll(A, n, 0)
 
+def row(x, y):
+    return x[y]
+
+def column(x, y):
+    return x[:, y]
+
 # Crops an image given the limits
 def crop(image, border):
     return image[border[0]:border[1], border[2]:border[3]]
 
-# Find the borders for the image  for a specific channel to crop out the unnatural ones
+# Find the borders for the image for a specific channel to crop out the unnatural ones
 def auto_crop(image):
     img = skfil.sobel(image)
-    row = lambda x, y: x[y]
-    column = lambda x, y: x[:,y]
+    height = img.shape[0]
+    width = img.shape[1]
 
     # Find the borders
     top = find_border(img, row, lambda x: x, 0)
-    bottom = find_border(img, row, lambda x: img.shape[0]-1-x, img.shape[0])
+    bottom = find_border(img, row, lambda x: height-1-x, height)
     left = find_border(img, column, lambda x: x, 0)
-    right = find_border(img, column, lambda x: img.shape[1]-1-x, img.shape[1])
+    right = find_border(img, column, lambda x: width-1-x, width)
 
-    return (top, bottom, left, right)
+    return top, bottom, left, right
 
 # Select the border that crops out the most
 def crop_all(B, G, R):
     auto_crops = [auto_crop(B), auto_crop(G), auto_crop(R)]
-    min_crop = min(auto_crops, key= area)
+    min_crop = min(auto_crops, key=area)
 
     B = crop(B, min_crop)
     G = crop(G, min_crop)
@@ -58,17 +59,17 @@ def crop_all(B, G, R):
 
     return B, G, R
 
-def find_border(image, list_func, value_func, default):
-    max_val = len(image)/100
+def find_border(image, line, position, default):
     max_move = int(image.shape[1]/20)
 
     border = default
     for i in range(0, max_move):
-        val = np.sum(list_func(image, value_func(max_move - i)))
+        val = np.sum(line(image, position(max_move - i)))
         # Choose the First val larger than value threshold as the border
-        if val >= max_val:
-            border = value_func(max_move - i)
+        if val >= len(image)/100:
+            border = position(max_move - i)
             break
+
     return border
 
 # Exhaust Search in [-20. 20] range with NCC or L2 as dist func
@@ -81,8 +82,8 @@ def exhaust_align(A, B):
             val = method(newA, B)
             moves.append([val, [i, j]])
 
-    sorted_list = sorted(moves, key=lambda x: x[0], reverse= method == NCC)
-    return sorted_list[0][1]
+    sorted_moves = sorted(moves, key=lambda x: x[0], reverse= method == NCC)
+    return sorted_moves[0][1]
 
 # Exhaust search
 def exhaust_search(original_image, save_name, should_crop):
@@ -109,13 +110,6 @@ def exhaust_search(original_image, save_name, should_crop):
     final = np.dstack([R, G, B])
     skio.imsave(save_name, final)
 
-def white_balance(image, from_row, from_column,
-                         row_width, column_width):
-    image_patch = image[from_row:from_row + row_width,
-                  from_column:from_column + column_width]
-    image_max = (image * 1.0 / image_patch.max(axis=(0, 1))).clip(0, 1)
-    return image_max
-
 def recurs(R, G, B, exp, min, moves):
     if exp <= min:
         return [R, G, B], moves
@@ -138,14 +132,6 @@ def recurs(R, G, B, exp, min, moves):
 
     return recurs(R, G, B, exp - 1, min, moves)
 
-def show_displacement(moves):
-    red_dis = [0, 0]
-    green_dis = [0, 0]
-    for move in moves:
-        red_dis = np.add(red_dis, move[0])
-        green_dis = np.add(green_dis, move[1])
-    print("red displacement:[", red_dis[0], red_dis[1], "] green displacement:[", green_dis[0], green_dis[1], "]")
-
 def pyramid_search(original_image, save_name, should_crop):
     img = skio.imread(original_image)
     height = np.floor(img.shape[0] / 3.0).astype(np.int)
@@ -158,18 +144,21 @@ def pyramid_search(original_image, save_name, should_crop):
     if should_crop:
         B, G, R = crop_all(B, G, R)
 
-    # Finds the exponent for which the image will have
-    # its X-axis downsized to 100
     exponent = int(math.log2(B.shape[1]/100))
     min_exponent = 0 if exponent <= 1 else 1
 
     moves = []
-    RGB_tuple, moves = recurs(R, G, B, exponent, min_exponent, moves)
-    show_displacement(moves)
+    RGB, moves = recurs(R, G, B, exponent, min_exponent, moves)
+    red_dis = [0, 0]
+    green_dis = [0, 0]
+    for move in moves:
+        red_dis = np.add(red_dis, move[0])
+        green_dis = np.add(green_dis, move[1])
+    print("red displacement:[", red_dis[0], red_dis[1], "] green displacement:[", green_dis[0], green_dis[1], "]")
 
-    R = RGB_tuple[0]
-    G = RGB_tuple[1]
-    B = RGB_tuple[2]
+    R = RGB[0]
+    G = RGB[1]
+    B = RGB[2]
 
     if should_crop:
         B, G, R = crop_all(B, G, R)
@@ -177,19 +166,14 @@ def pyramid_search(original_image, save_name, should_crop):
     final = np.dstack([R, G, B])
     skio.imsave(save_name, final)
 
-
-start_time = time.time()
-
-InputFile = './cathedral.jpg'
+input = './cathedral.jpg'
 method = NCC
 should_crop = 1
-should_white_balance = 0
 pyramid = 1
 if pyramid:
-    OutputFile = './cathedral_pyramid_NCC.jpg'
-    pyramid_search(InputFile, OutputFile, should_crop)
+    output = './cathedral_pyramid_NCC.jpg'
+    pyramid_search(input, output, should_crop)
 else:
-    OutputFile = './church_naive_NCC.jpg'
-    exhaust_search(InputFile, OutputFile, should_crop)
+    output = './church_naive_NCC.jpg'
+    exhaust_search(input, output, should_crop)
 
-print("Runtime: %.5s seconds" % (time.time() - start_time))
