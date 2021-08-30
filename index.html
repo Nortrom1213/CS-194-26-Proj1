@@ -14,7 +14,7 @@
 <p>Besides, I have also tried different base channel and align sequence for alignments, while the changes in result are so slight that I just take this factor out of consideration.  </p>
 
 <h3 id="auto-crop">Auto Crop</h3>
-<p>Automatic Cropping identify the borders and cut them off. We use the <strong>Sober</strong> filter on the image so that we can compute the horizontal and vertical gradients for each pixel. Then the rows 
+<p>Automatic Cropping identify the borders and cut them off. We use the <strong>Sober</strong> filter(which computes an approximation of the gradient of the image intensity function.) on the image so that we can compute the horizontal and vertical gradients for each pixel. Then the rows
  and columns with the maximum or minimum summed gradient are the borders. Once we find the borders for each channel, we select the one that crops the most and apply it to other channels. </p>
 <h3 id="example1">Auto Crop Example</h3>
 <p><img src="lady_pyramid_NCC_uncrop.jpg" width="30%"></p>
